@@ -1,147 +1,227 @@
 # ChatRAM
 
-**Memory Saver for ChatGPT.**
+> **Memory Saver for ChatGPT.** Keep long conversations usable without letting one tab swallow gigabytes of memory.
 
-ChatRAM is a small Chromium extension that keeps very long ChatGPT conversations from consuming several gigabytes of browser memory.
+ChatRAM is a small, open-source Chromium extension built for one specific problem: **very long ChatGPT conversations can become extremely memory-heavy**.
 
-Instead of hiding DOM elements after ChatGPT has already loaded the conversation, ChatRAM limits how much conversation history reaches the live ChatGPT client in the first place.
+Instead of hiding old messages after ChatGPT has already loaded them, ChatRAM limits how much conversation history reaches the live ChatGPT client in the first place. Your full conversation stays saved in ChatGPT.
 
-## Measured result
+## Results so far
 
-In one real Google Chrome test with a very long conversation:
+ChatRAM is still early, but the difference on large conversations can be substantial.
 
-**4.5 GB → about 1.0 GB RAM**
+| Test | Before | After | Result |
+| --- | ---: | ---: | ---: |
+| Very large conversation, Chrome process/task memory | **4.5 GB** | **~1.0 GB** | **~78% lower** |
+| Long conversation, live V8 JS heap | **577 MB** | **164 MB** | **~72% lower JS heap** |
+| History loaded in the same JS-heap test | **101 items** | **40 items** | bounded to configured window |
 
-That result was measured with Chrome's own process/task memory tooling. It is an example, not a guarantee. Memory savings depend on the conversation, message sizes, browser version, and selected history window.
+These are real measurements from development testing, not guaranteed results. Savings depend on the conversation, browser version, message sizes, attachments, active ChatGPT features, and the history window you choose.
 
-## Built-in memory measurement
+> **Important:** `JS heap` is not the same thing as Chrome Task Manager's total tab RAM. ChatRAM labels those measurements separately and does not pretend they are interchangeable.
 
-ChatRAM can capture a memory sample immediately before it reloads a conversation and another sample afterward.
+## Install
 
-The exact measurement source depends on what the browser exposes:
-
-- when available, ChatRAM uses `performance.measureUserAgentSpecificMemory()` for a broader page-memory estimate and can show a real Before → Now reduction;
-- otherwise Chromium falls back to `performance.memory.usedJSHeapSize`, which measures only the live V8 JavaScript heap.
-
-The JS heap is **not** Chrome Task Manager RAM. It can temporarily rise after a reload because ChatGPT is initializing fresh JavaScript state or because garbage collection happened at different times between the two samples. ChatRAM therefore labels this mode **JS heap only** and does not show a green/red RAM-savings claim from those numbers.
-
-Stable Chrome does **not** expose its Task Manager per-tab/renderer RAM total to ordinary extensions. Chrome's `chrome.processes` API can expose renderer private memory, but it is currently Dev-channel-only. ChatRAM intentionally avoids pretending a JS-heap snapshot is the same thing.
-
-The Before value is captured only when you click **Reload current tab** in ChatRAM. The comparison is tied to the same browser tab and conversation path so it will not compare two different chats by accident.
-
-## How it works
-
-ChatRAM runs before the ChatGPT application consumes conversation-history responses.
-
-For the current paginated conversation format it can:
-
-- clamp the requested recent-history window;
-- trim oversized `messages[]` responses;
-- stop older history pages from automatically accumulating in memory.
-
-For the older ChatGPT conversation format it can:
-
-- walk backward from the current message;
-- keep only the newest configured user/assistant history window;
-- remove older mapping nodes from the response before ChatGPT stores them.
-
-This targets the actual retained conversation data rather than animations, blur effects, or cosmetic rendering work.
-
-## Important behavior
-
-- **ChatRAM does not delete your conversation history.**
-- Older messages remain stored by ChatGPT/OpenAI.
-- Disable Memory Saver and reload the tab to allow normal/full history loading again.
-- With older-page loading blocked, you intentionally cannot scroll indefinitely into old history in that tab.
-- Changing the history limit does not release memory already held by the page. Reload the tab after changing it.
-- ChatGPT uses internal web endpoints that can change without notice, so ChatRAM may occasionally need updates.
-
-## Defaults
-
-- Memory Saver: **on**
-- Recent history window: **40**
-- Stop older pages loading: **on**
-
-The popup shows both the available memory diagnostic and the most recent intercepted history response as `original → kept` so you can verify that ChatRAM caught the conversation load.
-
-## Install locally
+ChatRAM is currently distributed directly from GitHub.
 
 1. Download or clone this repository.
 2. Open `chrome://extensions`.
-3. Enable **Developer mode**.
+3. Turn on **Developer mode**.
 4. Click **Load unpacked**.
-5. Select the repository folder containing `manifest.json`.
+5. Select the ChatRAM folder containing `manifest.json`.
 6. Open a long ChatGPT conversation.
-7. Open ChatRAM and click **Reload current tab**.
-8. Open ChatRAM again after the conversation loads to see the memory measurement and intercepted-history count.
+7. Open ChatRAM from the extensions menu and click **Reload current tab**.
 
-It should also work in Chromium-based browsers such as Edge, Brave, and Arc, although Chrome is the primary target.
+```bash
+git clone https://github.com/calebthecm/ChatRAM.git
+```
+
+Chrome is the primary target. ChatRAM should also work in Chromium-based browsers such as Edge, Brave, and Arc.
+
+## How to use it
+
+ChatRAM defaults to:
+
+- **Memory Saver:** on
+- **Recent history window:** 40
+- **Stop older pages loading:** on
+
+For most people, leaving the defaults alone is fine.
+
+When you click **Reload current tab**, ChatRAM captures a memory diagnostic, reloads the conversation, and lets ChatGPT rebuild the page with only the configured recent-history window live in memory.
+
+The popup also shows the most recent intercepted history load, for example:
+
+```text
+101 → 40 items (paginated history)
+```
+
+That is the easiest way to confirm ChatRAM actually intercepted the conversation load.
+
+## What ChatRAM actually does
+
+A huge ChatGPT conversation is not expensive only because there are lots of visible DOM elements. The browser can also retain the underlying conversation data, React state, caches, branches, and other objects in memory.
+
+Simply deleting old message elements from the page does not guarantee that memory is released, and ChatGPT can recreate those elements from retained client state.
+
+ChatRAM works earlier in the pipeline:
+
+```text
+ChatGPT requests conversation history
+              ↓
+      ChatRAM intercepts it
+              ↓
+   history payload is bounded
+              ↓
+ChatGPT receives only the recent window
+              ↓
+ less conversation state stays live in the tab
+```
+
+For ChatGPT's current paginated conversation format, ChatRAM can:
+
+- clamp the requested recent-history window;
+- trim oversized `messages[]` responses before ChatGPT consumes them;
+- stop older history pages from continuously accumulating in memory.
+
+For older conversation responses that use a full `mapping` graph, ChatRAM can:
+
+- walk backward from the current message;
+- retain only the newest configured user/assistant history window;
+- remove older mapping nodes before ChatGPT stores them;
+- repair parent/child references inside the retained window.
+
+## Your old messages are not deleted
+
+ChatRAM changes what the **current browser tab loads**, not what is stored in your ChatGPT account.
+
+If you need older history again:
+
+1. Open ChatRAM.
+2. Turn **Memory Saver** off.
+3. Reload the ChatGPT tab.
+
+ChatGPT can then load the conversation normally again.
+
+When **Stop older pages loading** is enabled, you intentionally will not be able to scroll indefinitely into old history in that tab. That is the tradeoff that keeps the live conversation bounded.
+
+## Memory measurements
+
+The popup can capture a sample before ChatRAM reloads the page and another afterward. The browser decides which measurement API is available.
+
+### Page memory
+
+When Chrome allows `performance.measureUserAgentSpecificMemory()`, ChatRAM can use a broader page-memory estimate and show a real before/after comparison.
+
+### JS heap only
+
+On normal stable Chrome, ChatRAM often falls back to `performance.memory.usedJSHeapSize`.
+
+That number is only V8's live JavaScript heap. It does **not** include every byte shown for the tab or renderer in Chrome Task Manager. It can also move up or down based on startup work and garbage-collection timing.
+
+That is why ChatRAM labels this mode **JS heap only** instead of calling it total RAM.
+
+Stable Chrome currently does not expose its exact Task Manager per-tab renderer memory to ordinary extensions. The `chrome.processes` API can expose process memory, but Chrome currently documents it as Dev-channel-only, so ChatRAM does not depend on it.
 
 ## Privacy
 
-ChatRAM has no analytics, telemetry, accounts, or external service.
+ChatRAM has:
 
-Conversation content is processed only inside the ChatGPT page so the response can be reduced before the web app consumes it. ChatRAM does not upload or persist prompts or responses.
+- **no analytics**;
+- **no telemetry**;
+- **no account system**;
+- **no external backend**;
+- **no ads**;
+- **no prompt or response collection**.
 
-The extension stores only:
+Conversation content is only touched inside the ChatGPT page so the history response can be reduced before ChatGPT consumes it. ChatRAM does not upload or persist the contents of your conversations.
 
-- its settings;
-- non-content trim statistics such as `100 → 40`;
-- local before/after memory samples used by the popup.
+The extension stores only local data needed for the extension itself, such as:
+
+- your ChatRAM settings;
+- non-content trim statistics such as `101 → 40`;
+- local memory samples used by the popup.
 
 ## Permissions
 
-ChatRAM requests:
+ChatRAM intentionally keeps its permission surface small.
 
-- `storage` for settings, trim statistics, and local memory comparison values;
-- host access only to `chatgpt.com` and the legacy `chat.openai.com` domain so it can run the memory-saving interceptor and read the page's own memory measurement.
+It requests:
 
-It does not request Chrome's `debugger`, browsing-history, cookies, or Dev-channel `processes` permissions.
+- `storage` for settings, trim statistics, and local memory samples;
+- host access to `chatgpt.com` and the legacy `chat.openai.com` domain so the interceptor can run on ChatGPT.
 
-## Architecture
+It does **not** request access to your browsing history, cookies, downloads, debugger, or the Dev-channel `processes` API.
+
+## Known limitations
+
+ChatRAM depends on internal ChatGPT web behavior. Those endpoints are not a public API and can change without notice.
+
+Other things to know:
+
+- changing the history window does not magically release memory already retained by the page; reload after changing it;
+- branches, edits, or regeneration points outside the retained legacy window may require disabling ChatRAM and reloading;
+- memory savings will vary dramatically between conversations;
+- attachment-heavy or feature-heavy conversations can still use substantial memory even with old message history bounded;
+- the built-in JS-heap meter is a diagnostic, not a replacement for Chrome Task Manager.
+
+## Project structure
 
 ```text
 src/main.js
-  MAIN world, document_start
+  runs in ChatGPT's MAIN world at document_start
   wraps window.fetch
-  identifies ChatGPT conversation-history endpoints
-  limits requests and trims JSON before the app consumes it
-  reads page/JS memory when the popup requests a sample
+  identifies conversation-history requests
+  limits and trims history before the app consumes it
+  provides page/JS memory samples when requested
 
 src/content.js
-  isolated extension world
-  bridges extension settings to the MAIN-world interceptor
-  relays memory samples to the extension popup
+  runs in the extension's isolated world
+  bridges settings to the MAIN-world interceptor
+  relays memory samples back to the popup
   stores non-content trim statistics
 
-src/popup.html / popup.js / popup.css
+src/popup.html
+src/popup.css
+src/popup.js
   Memory Saver controls
+  history-window configuration
   memory diagnostics
-  history-window selector
-  reload button
-  last-trim status
+  reload flow
+  interception status
 ```
 
-## Why not just remove old DOM nodes?
+## Help test ChatRAM
 
-Removing rendered message elements can reduce DOM size, but React and other client caches may still retain the underlying conversation data and recreate those elements later.
+The most useful contribution right now is real-world data from genuinely large conversations.
 
-ChatRAM reduces the data before ChatGPT puts it into that live client state. A page reload then clears the already-retained JavaScript heap and reloads only the bounded history window.
+If you report a result, include:
+
+```text
+Browser/version:
+Operating system:
+History window:
+Conversation size or age:
+Before memory:
+After memory:
+Measurement source: Chrome Task Manager / Page memory / JS heap
+Intercepted items: e.g. 101 → 40
+Anything that broke:
+```
+
+Reproducible bugs and memory results are welcome through GitHub Issues.
 
 ## Status
 
-ChatRAM is currently an early public build. The core approach has produced a measured reduction from roughly 4.5 GB to 1.0 GB on a large real-world conversation, but more conversations and browser versions still need testing.
-
-Bug reports and reproducible memory measurements are welcome through GitHub Issues.
+ChatRAM is an early public project. The core approach is already producing meaningful reductions in real long-running ChatGPT conversations, but it still needs testing across more conversations, browser versions, and ChatGPT frontend changes.
 
 ## Disclaimer
 
 ChatRAM is an independent project and is not affiliated with, endorsed by, or sponsored by OpenAI. ChatGPT is a trademark of OpenAI.
 
-## References
+## Technical references
 
-- Chrome content scripts and `world: "MAIN"`: https://developer.chrome.com/docs/extensions/reference/manifest/content-scripts
-- Chrome `processes` API (Dev channel): https://developer.chrome.com/docs/extensions/reference/api/processes
-- MDN `performance.memory`: https://developer.mozilla.org/en-US/docs/Web/API/Performance/memory
-- MDN `measureUserAgentSpecificMemory()`: https://developer.mozilla.org/en-US/docs/Web/API/Performance/measureUserAgentSpecificMemory
-- Observed August 2026 ChatGPT conversation pagination: https://gptspy.alinr.com/knowledge/endpoint/backend-api-conversations-id/
+- [Chrome content scripts and `world: "MAIN"`](https://developer.chrome.com/docs/extensions/reference/manifest/content-scripts)
+- [Chrome `processes` API](https://developer.chrome.com/docs/extensions/reference/api/processes)
+- [MDN: `performance.memory`](https://developer.mozilla.org/en-US/docs/Web/API/Performance/memory)
+- [MDN: `measureUserAgentSpecificMemory()`](https://developer.mozilla.org/en-US/docs/Web/API/Performance/measureUserAgentSpecificMemory)
