@@ -31,16 +31,79 @@
 
   let settings = readCachedSettings();
 
+  async function measurePageMemory() {
+    if (
+      window.crossOriginIsolated &&
+      typeof performance.measureUserAgentSpecificMemory === "function"
+    ) {
+      try {
+        const result = await performance.measureUserAgentSpecificMemory();
+        if (Number.isFinite(result?.bytes) && result.bytes >= 0) {
+          return {
+            available: true,
+            bytes: result.bytes,
+            kind: "page-memory",
+            label: "Page memory",
+            timestamp: Date.now()
+          };
+        }
+      } catch {
+        // Fall through to Chromium's JS heap measurement.
+      }
+    }
+
+    const memory = performance.memory;
+    if (memory && Number.isFinite(memory.usedJSHeapSize)) {
+      return {
+        available: true,
+        bytes: memory.usedJSHeapSize,
+        totalBytes: Number.isFinite(memory.totalJSHeapSize) ? memory.totalJSHeapSize : null,
+        limitBytes: Number.isFinite(memory.jsHeapSizeLimit) ? memory.jsHeapSizeLimit : null,
+        kind: "js-heap",
+        label: "JS heap",
+        timestamp: Date.now()
+      };
+    }
+
+    return {
+      available: false,
+      bytes: null,
+      kind: "unavailable",
+      label: "Unavailable",
+      timestamp: Date.now()
+    };
+  }
+
+  async function replyWithMemory(requestId) {
+    const memory = await measurePageMemory();
+    window.postMessage(
+      {
+        source: SOURCE,
+        type: "memory-response",
+        requestId,
+        memory
+      },
+      "*"
+    );
+  }
+
   window.addEventListener("message", (event) => {
     if (event.source !== window) return;
-    if (!event.data || event.data.source !== SOURCE || event.data.type !== "settings") return;
+    if (!event.data || event.data.source !== SOURCE) return;
 
-    settings = normalizeSettings(event.data.settings);
+    if (event.data.type === "settings") {
+      settings = normalizeSettings(event.data.settings);
 
-    try {
-      window.localStorage.setItem(CACHE_KEY, JSON.stringify(settings));
-    } catch {
-      // Settings still apply for this page even if site storage is unavailable.
+      try {
+        window.localStorage.setItem(CACHE_KEY, JSON.stringify(settings));
+      } catch {
+        // Settings still apply for this page even if site storage is unavailable.
+      }
+      return;
+    }
+
+    if (event.data.type === "memory-request") {
+      void replyWithMemory(String(event.data.requestId || ""));
     }
   });
 
