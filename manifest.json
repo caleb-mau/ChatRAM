@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ChatRAM",
   "short_name": "ChatRAM",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Cuts memory use in long ChatGPT conversations by keeping only a recent history window live in the tab.",
   "permissions": ["storage"],
   "host_permissions": [
