@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChatGPT Speed-Up</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <header class="header">
+        <div>
+          <p class="eyebrow">ChatGPT Speed-Up</p>
+          <h1>Make the UI lighter.</h1>
+        </div>
+        <label class="master-switch" title="Enable or disable all optimizations">
+          <input id="enabled" type="checkbox" />
+          <span class="switch" aria-hidden="true"></span>
+        </label>
+      </header>
+
+      <p class="intro">
+        Cuts visual rendering work without changing ChatGPT responses, requests, or account data.
+      </p>
+
+      <section class="settings" aria-label="Performance settings">
+        <label class="setting-row">
+          <span>
+            <strong>Disable animations</strong>
+            <small>Removes most transitions and motion.</small>
+          </span>
+          <input id="disableAnimations" type="checkbox" />
+        </label>
+
+        <label class="setting-row">
+          <span>
+            <strong>Reduce blur</strong>
+            <small>Turns off backdrop blur and glass effects.</small>
+          </span>
+          <input id="reduceBlur" type="checkbox" />
+        </label>
+
+        <label class="setting-row">
+          <span>
+            <strong>Instant scrolling</strong>
+            <small>Disables smooth scrolling.</small>
+          </span>
+          <input id="instantScrolling" type="checkbox" />
+        </label>
+
+        <label class="setting-row">
+          <span>
+            <strong>Virtualize old messages</strong>
+            <small>Lets Chrome skip rendering offscreen messages.</small>
+          </span>
+          <input id="virtualizeMessages" type="checkbox" />
+        </label>
+
+        <label class="setting-row">
+          <span>
+            <strong>Remove shadows</strong>
+            <small>Optional extra reduction in paint work.</small>
+          </span>
+          <input id="reduceShadows" type="checkbox" />
+        </label>
+      </section>
+
+      <footer>
+        <button id="reset" type="button">Reset defaults</button>
+        <span id="saved" role="status" aria-live="polite"></span>
+      </footer>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
