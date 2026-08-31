@@ -33,7 +33,7 @@ ChatRAM is currently distributed directly from GitHub.
 7. Open ChatRAM from the extensions menu and click **Reload current tab**.
 
 ```bash
-git clone https://github.com/calebthecm/ChatRAM.git
+git clone https://github.com/caleb-mau/ChatRAM.git
 ```
 
 Chrome is the primary target. ChatRAM should also work in Chromium-based browsers such as Edge, Brave, and Arc.
