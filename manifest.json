@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "ChatGPT Speed-Up",
-  "version": "0.1.0",
-  "description": "Makes ChatGPT feel faster by reducing expensive UI effects and skipping offscreen message rendering.",
-  "permissions": ["storage"],
+  "version": "0.2.0",
+  "description": "Keeps long ChatGPT conversations fast by limiting how much conversation history the web app holds in memory.",
+  "permissions": ["storage", "activeTab"],
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.openai.com/*"
@@ -14,9 +14,18 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*"
       ],
-      "css": ["src/speed.css"],
+      "js": ["src/main.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
       "js": ["src/content.js"],
-      "run_at": "document_start"
+      "run_at": "document_start",
+      "world": "ISOLATED"
     }
   ],
   "action": {
