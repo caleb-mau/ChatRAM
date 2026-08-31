@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChatGPT Speed-Up</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <div class="title-row">
+        <div>
+          <p class="eyebrow">ChatGPT Speed-Up</p>
+          <h1>Memory Saver</h1>
+        </div>
+        <label class="switch-label" aria-label="Enable Memory Saver">
+          <input id="enabled" type="checkbox" />
+          <span class="switch"></span>
+        </label>
+      </div>
+
+      <p class="intro">
+        Limits how much of a long conversation ChatGPT keeps live in this tab. Your older messages stay saved on OpenAI's servers.
+      </p>
+
+      <section class="card">
+        <label class="field" for="historyLimit">
+          <span>Recent history window</span>
+          <select id="historyLimit">
+            <option value="20">20</option>
+            <option value="40">40</option>
+            <option value="60">60</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+        </label>
+
+        <label class="check-row">
+          <span>
+            <strong>Stop older pages loading</strong>
+            <small>Prevents infinite scrolling from rebuilding a huge in-memory thread.</small>
+          </span>
+          <input id="blockOlderPages" type="checkbox" />
+        </label>
+      </section>
+
+      <section class="status-card">
+        <span class="status-label">Last intercepted load</span>
+        <strong id="stats">No conversation intercepted yet</strong>
+      </section>
+
+      <p class="note">
+        Changing the limit affects future conversation loads. Reload this ChatGPT tab to release history already held in memory.
+      </p>
+
+      <div class="actions">
+        <button id="reset" class="secondary" type="button">Reset</button>
+        <button id="reload" class="primary" type="button">Reload current tab</button>
+      </div>
+
+      <p id="saved" class="saved" role="status" aria-live="polite"></p>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
