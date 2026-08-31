@@ -1,57 +1,45 @@
-# ChatGPT Speed-Up
+# ChatRAM
 
-A small Chromium Manifest V3 extension for the real long-chat performance problem: **conversation data and retained client state**, not cosmetic animations.
+**Memory Saver for ChatGPT.**
 
-ChatGPT can become extremely memory-heavy after a long conversation has been loaded and older history has accumulated in the tab. This extension intercepts conversation-history reads before the ChatGPT app consumes them and limits how much history is allowed into the live client.
+ChatRAM is a small Chromium extension that keeps very long ChatGPT conversations from consuming several gigabytes of browser memory.
 
-## What it does
+Instead of hiding DOM elements after ChatGPT has already loaded the conversation, ChatRAM limits how much conversation history reaches the live ChatGPT client in the first place.
 
-### Current paginated ChatGPT format
+## Measured result
 
-As of August 2026, ChatGPT can load a conversation through:
+In one real Google Chrome test with a very long conversation:
 
-```text
-GET /backend-api/conversations/{id}?include_has_versions=true&num_turns=100
-```
+**4.5 GB → about 1.0 GB RAM**
 
-The response contains a `messages[]` array and `page_info`. Older history is requested with a `before` cursor.
+That is a measured example, not a guaranteed result. Memory savings depend on the conversation, message sizes, browser version, and selected history window.
 
-When Memory Saver is enabled, the extension:
+## How it works
 
-1. clamps `num_turns` to the configured history window when possible;
-2. trims an oversized `messages[]` response before ChatGPT receives it;
-3. sets `page_info.has_previous_page` to `false` when "Stop older pages loading" is enabled, preventing the app from continuously accumulating older pages in memory.
+ChatRAM runs before the ChatGPT application consumes conversation-history responses.
 
-### Legacy ChatGPT format
+For the current paginated conversation format it can:
 
-Older ChatGPT builds/accounts used:
+- clamp the requested recent-history window;
+- trim oversized `messages[]` responses;
+- stop older history pages from automatically accumulating in memory.
 
-```text
-GET /backend-api/conversation/{id}
-```
+For the older ChatGPT conversation format it can:
 
-with a complete `mapping` graph and `current_node`.
+- walk backward from the current message;
+- keep only the newest configured user/assistant history window;
+- remove older mapping nodes from the response before ChatGPT stores them.
 
-For that format, the extension walks backward from `current_node`, keeps only the newest configured user/assistant message window, removes unreachable mapping nodes, and repairs parent/child references before returning the response to ChatGPT.
+This targets the actual retained conversation data rather than animations, blur effects, or cosmetic rendering work.
 
 ## Important behavior
 
-- **It does not delete conversation history.** Older messages remain stored by OpenAI.
-- Disable Memory Saver and reload the ChatGPT tab to load the normal/full history again.
-- If "Stop older pages loading" is enabled, scrolling to very old messages inside the current tab will intentionally stop at the retained window.
-- Regeneration/edit branches outside the retained legacy window are not available until Memory Saver is disabled and the page is reloaded.
-- ChatGPT uses internal, undocumented web endpoints. OpenAI can change them at any time, so this extension may need maintenance when the web app changes.
-- No conversation content is uploaded anywhere by this extension. Settings and the last trim counts use Chrome extension storage only.
-
-## Install locally
-
-1. Download or clone this repository.
-2. Open `chrome://extensions` in Chrome, Edge, Brave, Arc, or another Chromium browser.
-3. Enable **Developer mode**.
-4. Click **Load unpacked**.
-5. Select the repository folder containing `manifest.json`.
-6. Open a long ChatGPT conversation.
-7. Use the extension popup to pick a history window, then click **Reload current tab**.
+- **ChatRAM does not delete your conversation history.**
+- Older messages remain stored by ChatGPT/OpenAI.
+- Disable Memory Saver and reload the tab to allow normal/full history loading again.
+- With older-page loading blocked, you intentionally cannot scroll indefinitely into old history in that tab.
+- Changing the history limit does not release memory already held by the page. Reload the tab after changing it.
+- ChatGPT uses internal web endpoints that can change without notice, so ChatRAM may occasionally need updates.
 
 ## Defaults
 
@@ -59,7 +47,37 @@ For that format, the extension walks backward from `current_node`, keeps only th
 - Recent history window: **40**
 - Stop older pages loading: **on**
 
-The popup also shows the last intercepted response as `original → kept` so you can confirm that the extension actually caught the conversation load.
+The popup shows the most recent intercepted history response as `original → kept` so you can verify that ChatRAM actually caught the conversation load.
+
+## Install locally
+
+1. Download or clone this repository.
+2. Open `chrome://extensions`.
+3. Enable **Developer mode**.
+4. Click **Load unpacked**.
+5. Select the repository folder containing `manifest.json`.
+6. Open a long ChatGPT conversation.
+7. Open ChatRAM and click **Reload current tab**.
+
+It should also work in Chromium-based browsers such as Edge, Brave, and Arc, although Chrome is the primary target.
+
+## Privacy
+
+ChatRAM has no analytics, telemetry, accounts, or external service.
+
+Conversation content is processed only inside the ChatGPT page so the response can be reduced before the web app consumes it. ChatRAM does not upload or persist prompts or responses.
+
+The extension stores only:
+
+- its settings;
+- non-content trim statistics such as `100 → 40`.
+
+## Permissions
+
+ChatRAM requests:
+
+- `storage` for settings and trim statistics;
+- host access only to `chatgpt.com` and the legacy `chat.openai.com` domain so it can run the memory-saving interceptor.
 
 ## Architecture
 
@@ -67,14 +85,13 @@ The popup also shows the last intercepted response as `original → kept` so you
 src/main.js
   MAIN world, document_start
   wraps window.fetch
-  identifies ChatGPT conversation-detail endpoints
-  rewrites/clamps requests
-  trims JSON responses before the application sees them
+  identifies ChatGPT conversation-history endpoints
+  limits requests and trims JSON before the app consumes it
 
 src/content.js
   isolated extension world
-  bridges chrome.storage settings to the MAIN-world script
-  stores non-content trim statistics for the popup
+  bridges extension settings to the MAIN-world interceptor
+  stores non-content trim statistics
 
 src/popup.html / popup.js / popup.css
   Memory Saver controls
@@ -83,9 +100,21 @@ src/popup.html / popup.js / popup.css
   last-trim status
 ```
 
-## Why not just delete DOM nodes?
+## Why not just remove old DOM nodes?
 
-Deleting old `<article>` elements can reduce rendered DOM size, but it does not guarantee that React, query caches, conversation objects, or other client state release the underlying history. ChatGPT can also recreate deleted DOM from its retained state. This extension attacks the problem earlier by reducing the conversation data before the app stores and renders it.
+Removing rendered message elements can reduce DOM size, but React and other client caches may still retain the underlying conversation data and recreate those elements later.
+
+ChatRAM reduces the data before ChatGPT puts it into that live client state. A page reload then clears the already-retained JavaScript heap and reloads only the bounded history window.
+
+## Status
+
+ChatRAM is currently an early public build. The core approach has produced a measured reduction from roughly 4.5 GB to 1.0 GB on a large real-world conversation, but more conversations and browser versions still need testing.
+
+Bug reports and reproducible memory measurements are welcome through GitHub Issues.
+
+## Disclaimer
+
+ChatRAM is an independent project and is not affiliated with, endorsed by, or sponsored by OpenAI. ChatGPT is a trademark of OpenAI.
 
 ## References
 
