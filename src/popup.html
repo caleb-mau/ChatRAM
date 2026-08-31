@@ -23,6 +23,25 @@
         Keeps long ChatGPT conversations lighter by limiting how much history stays live in this tab. Older messages remain saved in ChatGPT.
       </p>
 
+      <section class="memory-card" aria-label="ChatGPT memory comparison">
+        <div class="memory-header">
+          <span class="status-label">ChatGPT memory</span>
+          <span id="memoryMethod" class="memory-method">Measuring…</span>
+        </div>
+        <div class="memory-grid">
+          <div class="memory-stat">
+            <span>Before</span>
+            <strong id="beforeMemory">—</strong>
+          </div>
+          <div class="memory-stat">
+            <span>Now</span>
+            <strong id="nowMemory">—</strong>
+          </div>
+        </div>
+        <strong id="memoryDelta" class="memory-delta">Measuring current memory…</strong>
+        <small id="memoryNote" class="memory-note">Reading memory from the ChatGPT page.</small>
+      </section>
+
       <section class="card">
         <label class="field" for="historyLimit">
           <span>Recent history window</span>
@@ -50,7 +69,7 @@
       </section>
 
       <p class="note">
-        Changing the limit affects future conversation loads. Reload this ChatGPT tab to release history already held in memory.
+        Reload through ChatRAM to capture the current memory as Before and clear history already held by the page.
       </p>
 
       <div class="actions">
