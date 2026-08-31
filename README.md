@@ -12,24 +12,20 @@ In one real Google Chrome test with a very long conversation:
 
 **4.5 GB → about 1.0 GB RAM**
 
-That is a measured example, not a guaranteed result. Memory savings depend on the conversation, message sizes, browser version, and selected history window.
+That result was measured with Chrome's own process/task memory tooling. It is an example, not a guarantee. Memory savings depend on the conversation, message sizes, browser version, and selected history window.
 
-## Built-in memory comparison
+## Built-in memory measurement
 
-ChatRAM can now capture the ChatGPT page's memory immediately before it reloads and show the current value afterward:
-
-```text
-Before     4.12 GB
-Now        0.94 GB
-Saved      3.18 GB (77%)
-```
+ChatRAM can capture a memory sample immediately before it reloads a conversation and another sample afterward.
 
 The exact measurement source depends on what the browser exposes:
 
-- when available, ChatRAM uses `performance.measureUserAgentSpecificMemory()` for a broader page-memory estimate;
-- otherwise Chromium falls back to `performance.memory.usedJSHeapSize`, which measures the live JavaScript heap.
+- when available, ChatRAM uses `performance.measureUserAgentSpecificMemory()` for a broader page-memory estimate and can show a real Before → Now reduction;
+- otherwise Chromium falls back to `performance.memory.usedJSHeapSize`, which measures only the live V8 JavaScript heap.
 
-Stable Chrome does **not** expose its Task Manager per-tab/renderer RAM total to ordinary extensions. Chrome's `chrome.processes` API can expose renderer private memory, but it is currently Dev-channel-only. Because of that, ChatRAM labels its measurement method instead of pretending the JS heap is the complete Task Manager RAM value.
+The JS heap is **not** Chrome Task Manager RAM. It can temporarily rise after a reload because ChatGPT is initializing fresh JavaScript state or because garbage collection happened at different times between the two samples. ChatRAM therefore labels this mode **JS heap only** and does not show a green/red RAM-savings claim from those numbers.
+
+Stable Chrome does **not** expose its Task Manager per-tab/renderer RAM total to ordinary extensions. Chrome's `chrome.processes` API can expose renderer private memory, but it is currently Dev-channel-only. ChatRAM intentionally avoids pretending a JS-heap snapshot is the same thing.
 
 The Before value is captured only when you click **Reload current tab** in ChatRAM. The comparison is tied to the same browser tab and conversation path so it will not compare two different chats by accident.
 
@@ -66,7 +62,7 @@ This targets the actual retained conversation data rather than animations, blur 
 - Recent history window: **40**
 - Stop older pages loading: **on**
 
-The popup shows both the memory comparison and the most recent intercepted history response as `original → kept` so you can verify that ChatRAM caught the conversation load.
+The popup shows both the available memory diagnostic and the most recent intercepted history response as `original → kept` so you can verify that ChatRAM caught the conversation load.
 
 ## Install locally
 
@@ -77,7 +73,7 @@ The popup shows both the memory comparison and the most recent intercepted histo
 5. Select the repository folder containing `manifest.json`.
 6. Open a long ChatGPT conversation.
 7. Open ChatRAM and click **Reload current tab**.
-8. Open ChatRAM again after the conversation loads to see Before, Now, and the measured reduction.
+8. Open ChatRAM again after the conversation loads to see the memory measurement and intercepted-history count.
 
 It should also work in Chromium-based browsers such as Edge, Brave, and Arc, although Chrome is the primary target.
 
@@ -120,7 +116,7 @@ src/content.js
 
 src/popup.html / popup.js / popup.css
   Memory Saver controls
-  before/now memory comparison
+  memory diagnostics
   history-window selector
   reload button
   last-trim status

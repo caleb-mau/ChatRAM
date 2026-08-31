@@ -85,12 +85,15 @@
     const before = comparison?.before;
     const compatible = memoryCompatible(comparison, current, tabId);
     const method = current?.available ? current : before?.available ? before : null;
+    const isPageMemory = method?.kind === "page-memory";
+    const isJsHeap = method?.kind === "js-heap";
 
     beforeMemory.textContent = before?.available ? formatBytes(before.bytes) : "—";
     nowMemory.textContent = current?.available ? formatBytes(current.bytes) : "—";
-    memoryMethod.textContent = method?.label || "Unavailable";
+    memoryMethod.textContent = isJsHeap ? "JS heap only" : method?.label || "Unavailable";
+    memoryDelta.dataset.direction = "flat";
 
-    if (compatible) {
+    if (isPageMemory && compatible) {
       const difference = before.bytes - current.bytes;
       const percent = before.bytes > 0 ? (Math.abs(difference) / before.bytes) * 100 : 0;
 
@@ -102,20 +105,19 @@
         memoryDelta.dataset.direction = "up";
       } else {
         memoryDelta.textContent = "No measurable change";
-        memoryDelta.dataset.direction = "flat";
       }
+    } else if (isJsHeap && compatible) {
+      memoryDelta.textContent = "JS heap is not total tab RAM";
     } else if (before?.available && current?.available) {
       memoryDelta.textContent = "Open the same chat after reload to compare";
-      memoryDelta.dataset.direction = "flat";
     } else {
       memoryDelta.textContent = "Reload through ChatRAM to capture Before";
-      memoryDelta.dataset.direction = "flat";
     }
 
-    if (method?.kind === "page-memory") {
-      memoryNote.textContent = "Chrome supplied a broader page-memory estimate for this ChatGPT tab.";
-    } else if (method?.kind === "js-heap") {
-      memoryNote.textContent = "Stable Chrome fallback: live ChatGPT JavaScript heap. Task Manager total RAM can be higher.";
+    if (isPageMemory) {
+      memoryNote.textContent = "Chrome supplied a broader page-memory estimate, so Before/Now can be compared as a memory-saving result.";
+    } else if (isJsHeap) {
+      memoryNote.textContent = "This is only V8's live JavaScript heap. It can rise after reload because of startup and garbage-collection timing even when Chrome Task Manager RAM falls sharply.";
     } else {
       memoryNote.textContent = "Memory measurement is unavailable on this page/browser.";
     }
