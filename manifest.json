@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "ChatGPT Speed-Up",
+  "version": "0.1.0",
+  "description": "Makes ChatGPT feel faster by reducing expensive UI effects and skipping offscreen message rendering.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "css": ["src/speed.css"],
+      "js": ["src/content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_title": "ChatGPT Speed-Up",
+    "default_popup": "src/popup.html"
+  }
+}
