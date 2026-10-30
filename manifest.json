@@ -2,9 +2,11 @@
   "manifest_version": 3,
   "name": "ChatRAM",
   "short_name": "ChatRAM",
-  "version": "0.4.1",
-  "description": "Cuts memory use in long ChatGPT conversations by keeping only a recent history window live in the tab.",
-  "permissions": ["storage"],
+  "version": "0.5.0",
+  "description": "Reduce ChatGPT memory use and create a copy-paste continuation context for long conversations.",
+  "permissions": [
+    "storage"
+  ],
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.openai.com/*"
@@ -15,7 +17,10 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*"
       ],
-      "js": ["src/main.js"],
+      "js": [
+        "src/handoff-main.js",
+        "src/main.js"
+      ],
       "run_at": "document_start",
       "world": "MAIN"
     },
@@ -24,7 +29,9 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*"
       ],
-      "js": ["src/content.js"],
+      "js": [
+        "src/content.js"
+      ],
       "run_at": "document_start",
       "world": "ISOLATED"
     }
