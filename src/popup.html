@@ -68,6 +68,31 @@
         <strong id="stats">No conversation intercepted yet</strong>
       </section>
 
+      <section class="handoff-card" aria-labelledby="handoffHeading">
+        <div class="handoff-title">
+          <div>
+            <span class="status-label">Continue in a new chat</span>
+            <h2 id="handoffHeading">Conversation handoff</h2>
+          </div>
+        </div>
+        <p class="handoff-description">
+          Re-read the full available text history, even outside your memory-saving window.
+          Make a copy-paste context or save the transcript when a chat hits its limit.
+        </p>
+        <button id="buildHandoff" class="handoff-build" type="button">Prepare handoff</button>
+        <p id="handoffStatus" class="handoff-status" role="status" aria-live="polite"></p>
+        <div id="handoffResult" class="handoff-result" hidden>
+          <label for="handoffPreview">Continuation context preview</label>
+          <textarea id="handoffPreview" rows="4" readonly spellcheck="false"></textarea>
+          <button id="copyHandoff" class="primary" type="button" disabled>Copy continuation context</button>
+          <div class="handoff-secondary">
+            <button id="copyTranscript" class="secondary" type="button" disabled>Copy full text</button>
+            <button id="downloadTranscript" class="secondary" type="button" disabled>Download .md</button>
+          </div>
+          <small>Full text can be too long to paste into one new chat. Images, hidden reasoning, and complete tool internals are not exported.</small>
+        </div>
+      </section>
+
       <p class="note">
         Reload through ChatRAM to capture the current memory as Before and clear history already held by the page.
       </p>
@@ -81,5 +106,6 @@
     </main>
 
     <script src="popup.js"></script>
+    <script src="handoff-popup.js"></script>
   </body>
 </html>
