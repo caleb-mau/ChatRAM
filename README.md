@@ -58,6 +58,23 @@ The popup also shows the most recent intercepted history load, for example:
 
 That is the easiest way to confirm ChatRAM actually intercepted the conversation load.
 
+## Continue a chat after its limit
+
+ChatRAM **v0.5.0** adds a **Conversation handoff** section in the popup. This is available whenever a saved ChatGPT conversation is open, including when the chat no longer accepts new messages.
+
+1. Open the long conversation in ChatGPT and open the ChatRAM extension popup.
+2. Click **Prepare handoff**. ChatRAM fetches older history directly from ChatGPT in small pages, bypassing the extension's own recent-history window.
+3. Click **Copy continuation context**, open a new ChatGPT conversation, and paste it.
+4. For an audit trail, use **Copy full text** or **Download .md**. Very large transcripts must be downloaded instead of copied in one operation.
+
+**Continuation context** is a locally assembled, paste-size-limited excerpt of the conversation. For long chats it prioritizes the initial project description, recent working state, and explicit user instructions from throughout the conversation. It reports when messages were omitted. **It is not an AI-written summary**, and it cannot guarantee every decision was included.
+
+**Full text** attempts to retrieve all readable user/assistant text on the selected conversation path. It has a safety limit of 30,000 messages, 500 pages, or 12 million characters, whichever comes first. If pagination fails or a safety limit is reached, ChatRAM explicitly marks the capture incomplete.
+
+Images, file attachment contents, complete tool internals, and private model reasoning are not exported. This tool cannot transfer the underlying model's hidden state or automatically provide an exact amount of remaining context. If a conversation becomes too long, prepare the handoff from the popup. You do not need to ask the old conversation for another response.
+
+ChatRAM makes read-only requests to ChatGPT while you're signed in. It uses your existing authenticated tab, performs no third-party transmission, and does not persist the captured conversation content to extension storage. The text stays in volatile extension memory until the popup is closed, unless you explicitly copy or download it.
+
 ## What ChatRAM actually does
 
 A huge ChatGPT conversation is not expensive only because there are lots of visible DOM elements. The browser can also retain the underlying conversation data, React state, caches, branches, and other objects in memory.
@@ -132,7 +149,7 @@ ChatRAM has:
 - **no account system**;
 - **no external backend**;
 - **no ads**;
-- **no prompt or response collection**.
+- **no background prompt or response collection** (the opt-in handoff temporarily reads conversation text without saving it to extension storage).
 
 Conversation content is only touched inside the ChatGPT page so the history response can be reduced before ChatGPT consumes it. ChatRAM does not upload or persist the contents of your conversations.
 
@@ -168,6 +185,11 @@ Other things to know:
 ## Project structure
 
 ```text
+src/handoff-main.js
+  fetches the full conversation only when the user requests a handoff
+  follows ChatGPT's history pages without the Memory Saver cap
+  returns visible user/assistant text to the popup
+
 src/main.js
   runs in ChatGPT's MAIN world at document_start
   wraps window.fetch
@@ -184,11 +206,13 @@ src/content.js
 src/popup.html
 src/popup.css
 src/popup.js
+src/handoff-popup.js
   Memory Saver controls
   history-window configuration
   memory diagnostics
   reload flow
   interception status
+  copy-paste continuation context and full-text transcript export
 ```
 
 ## Help test ChatRAM
