@@ -2,6 +2,7 @@
   const SOURCE = "chatgpt-speedup";
   const CACHE_KEY = "__chatgpt_speedup_settings_v1";
   const MEMORY_REQUEST = "chatram-memory-request";
+  const HANDOFF_REQUEST = "chatram-handoff-request";
   const DEFAULTS = {
     enabled: true,
     historyLimit: 40,
@@ -9,6 +10,7 @@
   };
 
   const pendingMemoryRequests = new Map();
+  const pendingHandoffRequests = new Map();
 
   function normalizeSettings(value) {
     const raw = value && typeof value === "object" ? value : {};
@@ -67,6 +69,19 @@
     );
   }
 
+  function requestHandoff(sendResponse) {
+    const requestId = memoryRequestId();
+    const timer = window.setTimeout(() => {
+      const pending = pendingHandoffRequests.get(requestId);
+      if (!pending) return;
+      pendingHandoffRequests.delete(requestId);
+      pending.sendResponse({ ok: false, error: "Chat history retrieval timed out." });
+    }, 120000);
+
+    pendingHandoffRequests.set(requestId, { sendResponse, timer });
+    window.postMessage({ source: SOURCE, type: "handoff-request", requestId }, window.location.origin);
+  }
+
   chrome.storage.sync.get(DEFAULTS, (settings) => {
     publish(settings || DEFAULTS);
   });
@@ -81,14 +96,35 @@
   });
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (!message || message.type !== MEMORY_REQUEST) return false;
-    requestPageMemory(sendResponse);
-    return true;
+    if (message?.type === MEMORY_REQUEST) {
+      requestPageMemory(sendResponse);
+      return true;
+    }
+    if (message?.type === HANDOFF_REQUEST) {
+      requestHandoff(sendResponse);
+      return true;
+    }
+    return false;
   });
 
   window.addEventListener("message", (event) => {
     if (event.source !== window) return;
     if (!event.data || event.data.source !== SOURCE) return;
+
+    if (event.data.type === "handoff-response") {
+      const requestId = String(event.data.requestId || "");
+      const pending = pendingHandoffRequests.get(requestId);
+      if (!pending) return;
+
+      window.clearTimeout(pending.timer);
+      pendingHandoffRequests.delete(requestId);
+      pending.sendResponse(
+        event.data.error
+          ? { ok: false, error: String(event.data.error) }
+          : { ok: true, handoff: event.data.handoff }
+      );
+      return;
+    }
 
     if (event.data.type === "stats") {
       const stats = event.data.stats;
