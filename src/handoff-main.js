@@ -63,11 +63,12 @@
       if (!item) continue;
       const key = item.id || item.role + ":" + item.time + ":" + item.text.slice(0, 200);
       if (unique.has(key)) continue;
-      unique.add(key);
-      if (result.length >= MAX_MESSAGES || budget.characters + item.text.length > MAX_CHARACTERS) {
+      if (budget.count >= MAX_MESSAGES || budget.characters + item.text.length > MAX_CHARACTERS) {
         return false;
       }
+      unique.add(key);
       result.push(item);
+      budget.count += 1;
       budget.characters += item.text.length;
     }
     return true;
@@ -111,7 +112,7 @@
     let title = "";
     const unique = new Set();
     const messages = [];
-    const budget = { characters: 0 };
+    const budget = { characters: 0, count: 0 };
 
     while (pages < MAX_PAGES) {
       const url = new URL("/backend-api/conversations/" + encodeURIComponent(id), window.location.origin);
@@ -170,7 +171,7 @@
     }
 
     const messages = [];
-    const budget = { characters: 0 };
+    const budget = { characters: 0, count: 0 };
     const accepted = appendRows(backward.reverse(), new Set(), messages, budget);
     return {
       title: titleFrom(data),
