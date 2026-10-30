@@ -27,7 +27,11 @@
 
   function truncate(value, length) {
     if (value.length <= length) return value;
-    return value.slice(0, Math.max(0, length - 48)).trimEnd() + "\n[Message excerpt truncated for paste size]\n";
+    const marker = "\n[Middle of message omitted for paste size]\n";
+    const room = Math.max(0, length - marker.length);
+    const head = Math.ceil(room * 0.6);
+    const tail = Math.floor(room * 0.4);
+    return value.slice(0, head).trimEnd() + marker + value.slice(-tail).trimStart();
   }
 
   function createTranscript(data) {
@@ -88,8 +92,21 @@
     }
 
     // Most recent state is the most important thing in a continuation.
-    for (let i = messages.length - 1; i >= 0 && budget > 14000; i--) {
+    for (let i = messages.length - 1; i >= 0 && budget > 27000; i--) {
       add(i, 3800);
+    }
+
+    // Earlier assistant completion reports are often the only in-chat record of
+    // patches, configuration changes, commits, and verification results.
+    const workMilestone = /\b(committed|commit|deployed|merged|implemented|added|fixed|updated|created|tested|shipped|pushed|changed|verified|built|configured|completed|resolved|installed|removed|deleted|remaining|blocked)\b/i;
+    const milestones = [];
+    for (let i = 0; i < messages.length; i++) {
+      if (!selected.has(i) && messages[i].role === "assistant" && workMilestone.test(messages[i].text)) {
+        milestones.push(i);
+      }
+    }
+    for (let i = milestones.length - 1; i >= 0 && budget > 13000; i--) {
+      add(milestones[i], 1850);
     }
 
     // Fill remaining capacity with older explicit constraints and instructions.
