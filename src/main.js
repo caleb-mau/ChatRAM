@@ -275,16 +275,10 @@
 
   const nativeFetch = window.fetch.bind(window);
 
-  window.fetch = async function chatGptSpeedUpFetch(input, init) {
-    if (!settings.enabled || requestMethod(input, init) !== "GET") {
-      return nativeFetch(input, init);
-    }
-
-    const originalUrl = requestUrl(input);
-    const type = endpointType(originalUrl);
-
-    if (!type) return nativeFetch(input, init);
-
+  // Non-conversation requests should retain the exact native fetch promise.
+  // Returning through an async wrapper changes rejection ownership and causes
+  // ordinary ChatGPT network failures to be attributed to this extension.
+  async function interceptConversationFetch(input, init, originalUrl, type) {
     let requestInput = input;
     if (type === "paginated") {
       requestInput = clampPaginatedRequest(input, originalUrl);
@@ -316,5 +310,17 @@
 
     emitStats(stats);
     return rebuildJsonResponse(response, JSON.stringify(data));
+  }
+
+  window.fetch = function chatGptSpeedUpFetch(input, init) {
+    if (!settings.enabled || requestMethod(input, init) !== "GET") {
+      return nativeFetch(input, init);
+    }
+
+    const originalUrl = requestUrl(input);
+    const type = endpointType(originalUrl);
+    if (!type) return nativeFetch(input, init);
+
+    return interceptConversationFetch(input, init, originalUrl, type);
   };
 })();
