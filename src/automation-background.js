@@ -67,6 +67,7 @@
       if (!state || state.runId !== request.runId) return { ok: false, reason: "stale-run" };
 
       if (action === "stop") {
+        if (!state.active) return { ok: true, state };
         return { ok: true, state: await write(tabId, { ...state, active: false, status: request.status === "completed" ? "completed" : request.status === "limit" ? "limit" : request.status === "changed-chat" ? "changed-chat" : "stopped", updatedAt: Date.now() }) };
       }
       if (action === "claim") {
@@ -82,6 +83,7 @@
         return { ok: true, state: await write(tabId, { ...state, sendCount: state.sendCount + 1, status: state.mode === "once" ? "sent-once" : "waiting", active: state.mode !== "once", updatedAt: Date.now() }) };
       }
       if (action === "error") {
+        if (!state.active) return { ok: true, state };
         return { ok: true, state: await write(tabId, { ...state, active: false, status: "error", error: String(request.error || "Unable to send the prompt.").slice(0, 300), updatedAt: Date.now() }) };
       }
       return { ok: false, reason: "unknown-action" };
@@ -89,7 +91,7 @@
   }
 
   chrome.tabs.onRemoved.addListener((tabId) => {
-    void chrome.storage.session.remove(key(tabId));
+    void chrome.storage.session.remove([key(tabId), "chatram:auto:draft:" + tabId]);
   });
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
