@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "ChatRAM",
   "short_name": "ChatRAM",
-  "version": "0.6.1",
-  "description": "Reduce ChatGPT memory use, export conversation handoffs, and automate optional per-tab follow-ups.",
+  "version": "0.7.0",
+  "description": "Save memory, hand off long conversations, and optionally refine tab-specific prompts.",
   "permissions": [
     "storage"
   ],
@@ -54,5 +54,8 @@
   "homepage_url": "https://github.com/caleb-mau/ChatRAM",
   "background": {
     "service_worker": "src/automation-background.js"
-  }
+  },
+  "optional_permissions": [
+    "clipboardRead"
+  ]
 }
