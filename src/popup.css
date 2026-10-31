@@ -364,3 +364,111 @@ button:disabled {
   line-height: 1.45;
   opacity: 0.6;
 }
+
+
+/* Per-tab, opt-in ChatGPT follow-up automation. */
+.automation-card {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, CanvasText 16%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, CanvasText 4%, Canvas);
+}
+
+.automation-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.automation-header h2 {
+  margin: 5px 0 0;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.automation-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, CanvasText 9%, Canvas);
+}
+
+.automation-badge[data-active="true"] {
+  color: #10a37f;
+  background: color-mix(in srgb, #10a37f 12%, Canvas);
+}
+
+.automation-description {
+  margin: 10px 0 14px;
+  font-size: 11px;
+  line-height: 1.5;
+  opacity: 0.75;
+}
+
+.automation-field {
+  display: grid;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.automation-field > span {
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.automation-field > input,
+.automation-field > select,
+.automation-field > textarea {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  font-size: 12px;
+  color: CanvasText;
+  background: Canvas;
+  border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
+  border-radius: 8px;
+  padding: 9px;
+}
+
+.automation-field > textarea {
+  resize: vertical;
+  line-height: 1.4;
+  min-height: 54px;
+}
+
+.automation-copy {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.automation-actions {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.automation-status {
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 10px 0 5px;
+}
+
+.automation-status[data-error="true"] {
+  color: #d34b4b;
+}
+
+.automation-footnote {
+  display: block;
+  opacity: 0.58;
+  line-height: 1.45;
+  font-size: 10px;
+}
+
+[hidden] {
+  display: none !important;
+}
