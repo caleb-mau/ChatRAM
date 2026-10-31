@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "ChatRAM",
   "short_name": "ChatRAM",
-  "version": "0.5.0",
-  "description": "Reduce ChatGPT memory use and create a copy-paste continuation context for long conversations.",
+  "version": "0.6.0",
+  "description": "Reduce ChatGPT memory use, export conversation handoffs, and automate optional per-tab follow-ups.",
   "permissions": [
     "storage"
   ],
@@ -34,11 +34,25 @@
       ],
       "run_at": "document_start",
       "world": "ISOLATED"
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": [
+        "src/automation-content.js"
+      ],
+      "run_at": "document_idle",
+      "world": "ISOLATED"
     }
   ],
   "action": {
     "default_title": "ChatRAM",
     "default_popup": "src/popup.html"
   },
-  "homepage_url": "https://github.com/caleb-mau/ChatRAM"
+  "homepage_url": "https://github.com/caleb-mau/ChatRAM",
+  "background": {
+    "service_worker": "src/automation-background.js"
+  }
 }
