@@ -93,6 +93,61 @@
         </div>
       </section>
 
+      <section class="automation-card" aria-labelledby="automationHeading">
+        <div class="automation-header">
+          <div>
+            <span class="status-label">This browser tab only</span>
+            <h2 id="automationHeading">Follow-up automation</h2>
+          </div>
+          <span id="automationBadge" class="automation-badge">Off</span>
+        </div>
+        <p class="automation-description">Queue a prompt for when ChatGPT finishes, or continue until it prints your exact completion marker. Nothing runs until you arm it.</p>
+        <label class="automation-field" for="autoMode">
+          <span>Mode</span>
+          <select id="autoMode">
+            <option value="continue">Continue until complete</option>
+            <option value="once">Send once done</option>
+          </select>
+        </label>
+        <div id="continueFields">
+          <label class="automation-field" for="autoMarker">
+            <span>Exact completion marker</span>
+            <input id="autoMarker" type="text" value="[[CHATRAM_COMPLETE]]" maxlength="80" spellcheck="false" />
+          </label>
+          <label class="automation-field" for="autoCriteria">
+            <span>Completion standards (optional)</span>
+            <textarea id="autoCriteria" rows="2" maxlength="1500" placeholder="What must be verified before the task is complete?"></textarea>
+          </label>
+          <label class="automation-field" for="autoContinuePrompt">
+            <span>Follow-up message</span>
+            <textarea id="autoContinuePrompt" rows="3" maxlength="4000"></textarea>
+          </label>
+          <label class="automation-field" for="autoMaxSends">
+            <span>Maximum automatic follow-ups</span>
+            <select id="autoMaxSends">
+              <option value="3">3</option>
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="15">15</option>
+              <option value="25">25</option>
+            </select>
+          </label>
+          <button id="copyCompletionRule" class="secondary automation-copy" type="button">Copy marker instruction</button>
+        </div>
+        <div id="onceFields" hidden>
+          <label class="automation-field" for="autoOncePrompt">
+            <span>Prompt to send after the current response</span>
+            <textarea id="autoOncePrompt" rows="3" maxlength="4000" placeholder="Once you're finished, please…"></textarea>
+          </label>
+        </div>
+        <div class="automation-actions">
+          <button id="armAutomation" class="primary" type="button">Arm this tab</button>
+          <button id="stopAutomation" class="secondary" type="button" disabled>Stop</button>
+        </div>
+        <p id="automationStatus" class="automation-status" role="status" aria-live="polite">Open a saved ChatGPT conversation to begin.</p>
+        <small class="automation-footnote">Only sends on this tab and conversation. Stops on navigation, errors, or the configured limit. A completion marker is a signal from ChatGPT, not independent proof of quality.</small>
+      </section>
+
       <p class="note">
         Reload through ChatRAM to capture the current memory as Before and clear history already held by the page.
       </p>
@@ -107,5 +162,6 @@
 
     <script src="popup.js"></script>
     <script src="handoff-popup.js"></script>
+    <script src="automation-popup.js"></script>
   </body>
 </html>
