@@ -75,6 +75,22 @@ Images, file attachment contents, complete tool internals, and private model rea
 
 ChatRAM makes read-only requests to ChatGPT while you're signed in. It uses your existing authenticated tab, performs no third-party transmission, and does not persist the captured conversation content to extension storage. The text stays in volatile extension memory until the popup is closed, unless you explicitly copy or download it.
 
+## Improve a follow-up prompt with ChatGPT (v0.7.0)
+
+ChatRAM now has an **Improve with ChatGPT** action for the Completion standards, Continue until complete, and Send once done fields.
+
+1. Enter a draft into the selected field, then click **Improve**.
+2. ChatRAM copies a targeted editing request that includes the selected field's text, the mode, the completion marker, and relevant settings from that tab.
+3. It opens a separate `chatgpt.com` tab. **Select Temporary and Unpersonalized before sending**, then paste the request and submit it.
+4. Copy the finished improved text using ChatGPT's visible Copy control.
+5. Return to your original conversation's ChatRAM popup and click **Apply copied improvement**, or paste the answer manually and click **Apply pasted text**.
+
+The prompt is applied only after that deliberate action; it never overwrites a field silently or sends the improved text into your original conversation. An edit conflict, overly long response, missing clipboard permission, or a failed helper does not discard your original draft. The requested optional clipboard-read permission is only used when you click Apply copied improvement. The pending request is tab-specific and discarded when that browser tab closes.
+
+This version uses the normal authenticated ChatGPT website with **no API key**, but **does not programmatically read responses from ChatGPT or automate Temporary Chat selection**. The extension opens the new tab and prepares the request; you confirm Temporary Chat before sending. This avoids accidentally saving the helper conversation as a regular chat and keeps the final result under your review. ChatGPT Temporary Chats may still be retained for up to 30 days for safety purposes.
+
+The text sent to the helper comes from ChatRAM's visible settings. ChatRAM does not automatically copy private project messages or hidden model state into the editing request. The helper also does not verify the completion criteria; it only improves their wording.
+
 ## Per-tab follow-up automation (v0.6.0)
 
 The popup now offers two **opt-in, tab-specific** behaviors. They are off by default, stored only for the browser session, and do not run in other ChatGPT tabs.
@@ -206,6 +222,10 @@ src/automation-content.js
 
 src/automation-popup.js
   tab-only follow-up settings and controls
+
+src/prompt-improver-core.js
+src/prompt-improver.js
+  opt-in editing request and application controls
 
 src/handoff-main.js
   fetches the full conversation only when the user requests a handoff
