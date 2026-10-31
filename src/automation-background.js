@@ -91,7 +91,7 @@
   }
 
   chrome.tabs.onRemoved.addListener((tabId) => {
-    void chrome.storage.session.remove([key(tabId), "chatram:auto:draft:" + tabId]);
+    void chrome.storage.session.remove([key(tabId), "chatram:auto:draft:" + tabId, "chatram:improve:" + tabId]);
   });
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
