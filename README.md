@@ -75,6 +75,19 @@ Images, file attachment contents, complete tool internals, and private model rea
 
 ChatRAM makes read-only requests to ChatGPT while you're signed in. It uses your existing authenticated tab, performs no third-party transmission, and does not persist the captured conversation content to extension storage. The text stays in volatile extension memory until the popup is closed, unless you explicitly copy or download it.
 
+## Per-tab follow-up automation (v0.6.0)
+
+The popup now offers two **opt-in, tab-specific** behaviors. They are off by default, stored only for the browser session, and do not run in other ChatGPT tabs.
+
+- **Continue until complete:** Arm it while ChatGPT is responding, or before sending your next task. Once the current response finishes, ChatRAM looks for an exact standalone completion marker in the last visible assistant response, by default `[[CHATRAM_COMPLETE]]`. If absent, ChatRAM sends a configurable continuation prompt, reminding ChatGPT about the completion standards and marker. It repeats until the marker appears or the user-configured follow-up cap is reached (10 by default, 25 maximum).
+- **Send once done:** Enter the next prompt, then arm the tab. ChatRAM waits for a newly completed response, submits exactly one follow-up, and stops.
+
+**How to use continue mode:** Click **Copy marker instruction** and add it to your original task. Tell ChatGPT exactly what counts as complete in **Completion standards**. The extension cannot independently verify source code, tests, files, or deployment quality: it trusts the exact marker from the model and does not treat a general phrase like "done" as proof. The marker must be a standalone line, outside a code fence.
+
+**Safeguards:** Each tab and conversation is independent. Automation never sends immediately on an old response; it waits for the current in-progress or next answer, then for a quiet interval after generation stops. It stops when the tab navigates to a different conversation, when the required composer cannot be found, when a draft exists, when insertion fails, when the user presses Stop, or when the follow-up limit is reached. Each reply can trigger at most one automatic send; submission claims are saved before clicking Send to avoid duplicates after a reload. Progress and current status appear in the extension popup.
+
+Chrome background-tab throttling, ChatGPT UI changes, model limits, network failures and site restrictions can interrupt automation. ChatRAM does not bypass ChatGPT limits, automatically confirm actual task completion, or keep a discarded/sleeping tab alive. Do not use unattended automation for high-impact actions without reviewing what it is doing.
+
 ## What ChatRAM actually does
 
 A huge ChatGPT conversation is not expensive only because there are lots of visible DOM elements. The browser can also retain the underlying conversation data, React state, caches, branches, and other objects in memory.
@@ -149,7 +162,7 @@ ChatRAM has:
 - **no account system**;
 - **no external backend**;
 - **no ads**;
-- **no background prompt or response collection** (the opt-in handoff temporarily reads conversation text without saving it to extension storage).
+- **no background prompt or response collection unless you explicitly arm follow-up automation** (the opt-in handoff temporarily reads conversation text without saving it to extension storage).
 
 Conversation content is only touched inside the ChatGPT page so the history response can be reduced before ChatGPT consumes it. ChatRAM does not upload or persist the contents of your conversations.
 
@@ -185,6 +198,15 @@ Other things to know:
 ## Project structure
 
 ```text
+src/automation-background.js
+  tracks per-tab mode, progress, completion state, and send guards in session storage
+
+src/automation-content.js
+  watches the active conversation and sends explicitly configured follow-ups
+
+src/automation-popup.js
+  tab-only follow-up settings and controls
+
 src/handoff-main.js
   fetches the full conversation only when the user requests a handoff
   follows ChatGPT's history pages without the Memory Saver cap
