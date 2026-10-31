@@ -118,10 +118,12 @@
             <span>Completion standards (optional)</span>
             <textarea id="autoCriteria" rows="2" maxlength="1500" placeholder="What must be verified before the task is complete?"></textarea>
           </label>
+          <button type="button" class="secondary automation-improve" data-improve-field="autoCriteria">✦ Improve completion standards</button>
           <label class="automation-field" for="autoContinuePrompt">
             <span>Follow-up message</span>
             <textarea id="autoContinuePrompt" rows="3" maxlength="4000"></textarea>
           </label>
+          <button type="button" class="secondary automation-improve" data-improve-field="autoContinuePrompt">✦ Improve continuation prompt</button>
           <label class="automation-field" for="autoMaxSends">
             <span>Maximum automatic follow-ups</span>
             <select id="autoMaxSends">
@@ -139,6 +141,22 @@
             <span>Prompt to send after the current response</span>
             <textarea id="autoOncePrompt" rows="3" maxlength="4000" placeholder="Once you're finished, please…"></textarea>
           </label>
+          <button type="button" class="secondary automation-improve" data-improve-field="autoOncePrompt">✦ Improve queued prompt</button>
+        </div>
+        <div id="improverPanel" class="improver-panel" hidden>
+          <strong id="improverTarget">Improve prompt</strong>
+          <p class="improver-steps">A ChatGPT tab opens with the editing request copied. Select <strong>Temporary</strong>, choose Unpersonalized, paste and submit the request. Copy ChatGPT's improved answer, return here, then apply it.</p>
+          <p id="improverStatus" class="automation-status" role="status" aria-live="polite"></p>
+          <button id="improverApplyClipboard" type="button" class="primary improver-wide">Apply copied improvement</button>
+          <label class="automation-field" for="improverManual">
+            <span>Or paste improved text manually</span>
+            <textarea id="improverManual" rows="3" placeholder="Paste ChatGPT's improved response here…"></textarea>
+          </label>
+          <div class="improver-actions">
+            <button id="improverApplyManual" type="button" class="secondary">Apply pasted text</button>
+            <button id="improverCancel" type="button" class="secondary">Cancel</button>
+          </div>
+          <small class="automation-footnote">Your original draft stays unchanged until you apply the new text. This does not automatically read ChatGPT responses.</small>
         </div>
         <div class="automation-actions">
           <button id="armAutomation" class="primary" type="button">Arm this tab</button>
@@ -163,5 +181,7 @@
     <script src="popup.js"></script>
     <script src="handoff-popup.js"></script>
     <script src="automation-popup.js"></script>
+    <script src="prompt-improver-core.js"></script>
+    <script src="prompt-improver.js"></script>
   </body>
 </html>
