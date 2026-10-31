@@ -96,7 +96,7 @@
     return null;
   }
 
-  async function sendPrompt(prompt) {
+  async function sendPrompt(prompt, runId) {
     const input = composer();
     if (!input || !isVisible(input)) throw new Error("ChatGPT's composer was not found. Automation stopped safely.");
     if (draftText(input)) throw new Error("A draft is already in the composer. Automation paused to avoid overwriting it.");
@@ -122,8 +122,19 @@
       await new Promise((resolve) => setTimeout(resolve, 180));
       const button = sendButton();
       if (button && !button.disabled && button.getAttribute("aria-disabled") !== "true") {
+        const latest = await request("get");
+        if (!latest.state?.active || latest.state.runId !== runId || latest.state.status !== "sending" ||
+            currentConversationPath() !== latest.state.conversationPath) {
+          throw new Error("Automation stopped or the conversation changed before submission. Unsent draft was preserved.");
+        }
         button.click();
-        return;
+        // Do not mark a message as submitted until ChatGPT clears the editor.
+        for (let check = 0; check < 12; check++) {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          const updated = composer();
+          if (updated && !draftText(updated)) return;
+        }
+        throw new Error("Send was clicked but ChatGPT did not clear the editor. Automation paused to avoid a duplicate.");
       }
     }
     throw new Error("ChatGPT's Send button did not become available. Review the unsent draft before retrying.");
@@ -212,7 +223,7 @@
       const confirmation = await request("get");
       if (!confirmation.state?.active || confirmation.state.runId !== runId || confirmation.state.status !== "sending") return;
 
-      await sendPrompt(prompt);
+      await sendPrompt(prompt, runId);
       const result = await request("sent", { runId, fingerprint });
       state = result.state;
       baseline = fingerprint;
