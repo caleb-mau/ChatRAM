@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ChatRAM",
   "short_name": "ChatRAM",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Reduce ChatGPT memory use, export conversation handoffs, and automate optional per-tab follow-ups.",
   "permissions": [
     "storage"
