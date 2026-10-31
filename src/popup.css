@@ -472,3 +472,11 @@ button:disabled {
 [hidden] {
   display: none !important;
 }
+
+.automation-improve { display: block; width: 100%; margin-top: 7px; font-size: 11px; }
+.improver-panel { margin-top: 14px; border: 1px solid color-mix(in srgb, CanvasText 18%, transparent); border-radius: 10px; padding: 12px; background: Canvas; }
+.improver-panel > strong { display: block; font-size: 12px; }
+.improver-steps { font-size: 11px; line-height: 1.5; opacity: 0.75; }
+.improver-wide { width: 100%; margin-top: 8px; }
+.improver-actions { margin-top: 8px; display: grid; grid-template-columns: 1.5fr 0.8fr; gap: 8px; }
+.improver-panel .automation-field > textarea { min-height: 65px; }
